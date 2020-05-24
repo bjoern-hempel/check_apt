@@ -63,7 +63,7 @@ usage() {
     # Display Help
     echo "This is a simple nagios check script for checking the apt status."
     echo
-    echo "Syntax: check_apt [[[-w warning ] [-c critical] [-d days]] | [-h] | [-v]]"
+    echo "Syntax: check_apt_2 [[[-w warning ] [-c critical] [-d days]] | [-h] | [-v]]"
     echo "options:"
     echo "-w | --warning        The number of updateable packages above which a warning is displayed (default: 10)."
     echo "-c | --critical       The number of updateable packages above which a critical warning is displayed (default: 20)."
