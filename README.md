@@ -1,9 +1,9 @@
-# check_apt
+# check_apt_2
 
 ## Usage
 
 ```bash
-user$ bin/check_apt -h
+user$ bin/check_apt_2 -h
 This is a simple nagios check script for checking the apt status.
 
 Syntax: check_apt [[[-w warning ] [-c critical] [-d days]] | [-h] | [-v]]
@@ -17,6 +17,6 @@ options:
 ```
 
 ```bash
-user$ bin/check_apt
+user$ bin/check_apt_2
 APT OK: 0 packages available for upgrade (0 critical updates).
 ```
