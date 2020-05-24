@@ -1,0 +1,170 @@
+#!/bin/bash
+
+# ------------
+# A simple nagios check script to check a apt service
+#
+# @author    Björn Hempel <bjoern@hempel.li>
+# @version   v1.0 (2020-05-24)
+#
+# @copyright MIT License
+# @copyright
+# @copyright Copyright (c) 2020 Björn Hempel
+# @copyright
+# @copyright Permission is hereby granted, free of charge, to any person obtaining a copy
+# @copyright of this software and associated documentation files (the "Software"), to deal
+# @copyright in the Software without restriction, including without limitation the rights
+# @copyright to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# @copyright copies of the Software, and to permit persons to whom the Software is
+# @copyright furnished to do so, subject to the following conditions:
+# @copyright
+# @copyright The above copyright notice and this permission notice shall be included in all
+# @copyright copies or substantial portions of the Software.
+# @copyright
+# @copyright THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# @copyright IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# @copyright FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# @copyright AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# @copyright LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# @copyright OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# @copyright SOFTWARE.
+# @copyright
+# @copyright Written by Björn Hempel <bjoern@hempel.li>.
+# ------------
+
+
+
+# define some default parameters
+warning=10
+critical=20
+days=14
+
+
+
+# nagios codes
+nagios_type='APT'
+nagios_ok_text="$nagios_type OK:"
+nagios_ok_status=0
+nagios_warning_text="$nagios_type WARNING:"
+nagios_warning_status=1
+nagios_critical_text="$nagios_type CRITICAL:"
+nagios_critical_status=2
+nagios_unknown_text="$nagios_type UNKNOWN:"
+nagios_unknown_status=3
+
+
+
+# ------------
+# Return the usage of this script
+#
+# @author  Bjoern Hempel <bjoern@hempel.li>
+# @version 1.0 (2020-05-23)
+# ------------
+usage() {
+    # Display Help
+    echo "This is a simple nagios check script for checking the apt status."
+    echo
+    echo "Syntax: check_apt [[[-w warning ] [-c critical] [-d days]] | [-h] | [-v]]"
+    echo "options:"
+    echo "-w | --warning        The number of updateable packages above which a warning is displayed (default: 10)."
+    echo "-c | --critical       The number of updateable packages above which a critical warning is displayed (default: 20)."
+    echo "-d | --days           The number of days before an update warning is displayed (default: 14)."
+    echo
+    echo "-h | --help           Shows this help dialog."
+    echo "-v | --version        Shows the version of this script."
+    echo
+}
+
+# ------------
+# Shows some version informations
+#
+# @author  Bjoern Hempel <bjoern@hempel.li>
+# @version 1.0 (2020-05-23)
+# ------------
+version() {
+    echo "http_apt 1.0 - a nagios check script by Bjoern Hempel <bjoern@hempel.li>"
+}
+
+while [ "$1" != "" ]; do
+    case $1 in
+        -w | --warning )        shift
+                                warning=$1
+                                ;;
+        -c | --critical )       shift
+                                critical=$1
+                                ;;
+        -d | --days )           shift
+                                days=$1
+                                ;;
+        -h | --help )           usage
+                                exit
+                                ;;
+        -v | --version)         version
+                                exit
+                                ;;
+        * )                     usage
+                                exit 1
+    esac
+    shift
+done
+
+# check the given parameter
+if [ $warning -ge $critical ]; then
+    usage
+    exit
+fi
+
+
+
+# ------------
+# Returns the number of updateable packages.
+#
+# @author  Bjoern Hempel <bjoern@hempel.li>
+# @version 1.0 (2020-05-24)
+# ------------
+get_updateable_packages() {
+    echo $(apt-get -s -o Debug::NoLocking=true upgrade | grep ^Inst | wc -l)
+}
+
+# ------------
+# Returns the number of critical updateable packages.
+#
+# @author  Bjoern Hempel <bjoern@hempel.li>
+# @version 1.0 (2020-05-24)
+# ------------
+get_critical_updateable_packages() {
+    echo $(apt-get -s -o Debug::NoLocking=true upgrade | grep ^Inst | wc -l)
+}
+
+
+
+# set some nagios variables
+nagios_text="$nagios_ok_text"
+nagios_status=$nagios_ok_status
+nagios_error=""
+updateable_packages=$(get_updateable_packages)
+#critical_updateable_packages=$(get_critical_updateable_packages)
+critical_updateable_packages=$(get_updateable_packages)
+
+
+
+if [ "$nagios_error" == "" ] && [ $updateable_packages -ge $critical ]; then
+    nagios_text="$nagios_critical_text"
+    nagios_status=$nagios_critical_status
+    nagios_error="$updateable_packages packages available for upgrade ($critical_updateable_packages critical updates)."
+fi
+
+if [ "$nagios_error" == "" ] && [ $updateable_packages -ge $warning ]; then
+    nagios_text="$nagios_warning_text"
+    nagios_status=$nagios_warning_status
+    nagios_error="$updateable_packages packages available for upgrade ($critical_updateable_packages critical updates)."
+fi
+
+
+
+if [ "$nagios_error" == "" ]; then
+    echo "$nagios_text 0 packages available for upgrade (0 critical updates)."
+else
+    echo "$nagios_text $nagios_error"
+fi
+
+exit $nagios_status
