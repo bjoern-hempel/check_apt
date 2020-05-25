@@ -122,7 +122,7 @@ fi
 # @version 1.0 (2020-05-24)
 # ------------
 get_updateable_packages() {
-    echo $(apt-get -s -o Debug::NoLocking=true upgrade | grep ^Inst | wc -l)
+    echo "$(apt-get -s -o Debug::NoLocking=true upgrade | grep ^Inst)"
 }
 
 # ------------
@@ -132,7 +132,7 @@ get_updateable_packages() {
 # @version 1.0 (2020-05-24)
 # ------------
 get_critical_updateable_packages() {
-    echo $(apt-get -s -o Debug::NoLocking=true upgrade | grep ^Inst | wc -l)
+    echo "$(echo "$1" | grep -i security)"
 }
 
 
@@ -141,22 +141,23 @@ get_critical_updateable_packages() {
 nagios_text="$nagios_ok_text"
 nagios_status=$nagios_ok_status
 nagios_error=""
+
 updateable_packages=$(get_updateable_packages)
-#critical_updateable_packages=$(get_critical_updateable_packages)
-critical_updateable_packages=$(get_updateable_packages)
+critical_updateable_packages=$(get_critical_updateable_packages "$updateable_packages")
 
+number_updateable_packages=$(echo "$updateable_packages" | wc -l)
+number_critical_updateable_packages=$(echo "$critical_updateable_packages" | wc -l)
 
-
-if [ "$nagios_error" == "" ] && [ $updateable_packages -ge $critical ]; then
+if [ "$nagios_error" == "" ] && [ $number_updateable_packages -ge $critical ]; then
     nagios_text="$nagios_critical_text"
     nagios_status=$nagios_critical_status
-    nagios_error="$updateable_packages packages available for upgrade ($critical_updateable_packages critical updates)."
+    nagios_error="$number_updateable_packages packages available for upgrade ($number_critical_updateable_packages critical updates)."
 fi
 
-if [ "$nagios_error" == "" ] && [ $updateable_packages -ge $warning ]; then
+if [ "$nagios_error" == "" ] && [ $number_updateable_packages -ge $warning ]; then
     nagios_text="$nagios_warning_text"
     nagios_status=$nagios_warning_status
-    nagios_error="$updateable_packages packages available for upgrade ($critical_updateable_packages critical updates)."
+    nagios_error="$number_updateable_packages packages available for upgrade ($number_critical_updateable_packages critical updates)."
 fi
 
 
